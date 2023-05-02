@@ -8,12 +8,13 @@ class IncrementalStatistics():
     Args:
         object (_type_): _description_
     """
-    def __init__(self) -> None:
+    def __init__(self, use_kahan=True) -> None:
         self.__mean = 0.0
         self.__count = 0
         self.__m_2 = 0.0
         self.__c_mean = 0.0
         self.__c_m_2 = 0.0
+        self.__use_kahan = use_kahan
 
     def clear(self) -> None:
         """clear the variables
@@ -48,13 +49,19 @@ class IncrementalStatistics():
             data (float): input
         """
         self.__count += 1
-        # meanの計算
-        delta = data - self.__mean
-        self.__mean, self.__c_mean = self.kahan(self.__mean, self.__c_mean, delta / self.__count)
+        if self.__use_kahan:
+            # meanの計算
+            delta = data - self.__mean
+            self.__mean, self.__c_mean = self.kahan(self.__mean, self.__c_mean, delta / self.__count)
 
-        # varの計算
-        delta_var = data - self.__mean
-        self.__m_2, self.__c_m_2 = self.kahan(self.__m_2, self.__c_m_2, delta * delta_var)
+            # varの計算
+            delta_var = data - self.__mean
+            self.__m_2, self.__c_m_2 = self.kahan(self.__m_2, self.__c_m_2, delta * delta_var)
+        else:
+            delta = data - self.__mean
+            self.__mean += delta / self.__count
+            delta_var = data - self.__mean
+            self.__m_2 += delta * delta_var
 
     def get_mean(self) -> float:
         """return mean value
